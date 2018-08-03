@@ -1,0 +1,187 @@
+package point.artem.projecttest.authorization
+
+import android.app.Activity
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.util.Log
+import android.widget.Toast
+import point.artem.projecttest.R
+import point.artem.projecttest.authorization.present.AuthorizationPresent
+import point.artem.projecttest.authorization.view.IAuthorizationView
+import android.content.Intent
+import android.support.v4.view.GravityCompat
+import android.support.v4.widget.DrawerLayout
+import android.support.v7.app.ActionBarDrawerToggle
+import android.support.v7.widget.Toolbar
+import com.facebook.*
+import com.vk.sdk.VKSdk
+import android.view.View
+import com.google.android.gms.auth.api.Auth
+import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.common.ConnectionResult
+import kotlinx.android.synthetic.main.app_bar_main.*
+import kotlinx.android.synthetic.main.item_servis.view.*
+import kotlinx.android.synthetic.main.nav_header_main.*
+import point.artem.projectpoint.githubSearch.GithubSearchActivity
+import point.artem.projecttest.authorization.model.UserModel
+import point.artem.projecttest.authorization.utils.load
+
+
+class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiClient.OnConnectionFailedListener {
+    var present: AuthorizationPresent? = null
+    var callbackManager:CallbackManager? = null
+    private val RC_SIGN_IN_GOOGLE = 911
+
+    /*
+    * Я очень надеюсь, что код оправдает ваши желаение.
+    *
+    * Под левым меню, я надеюсь правильно понял что имеете ввиду NavigationDrawer, а не просто menu только слева.
+    *
+    * Приложение разложил на 2 активити с GithubSearch и Authorization
+    *
+    * Оба активити сделаны по паттерну MVP, чтобы уменьшить связь между элементами для удобного тестирования
+    * */
+
+    override fun error(error: String) {
+        Toast.makeText(this, error, Toast.LENGTH_LONG).show()
+    }
+
+    override fun complete() {
+        val intent:Intent = Intent(this ,GithubSearchActivity::class.java)
+        startActivity(intent)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_authorization)
+        val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
+        setSupportActionBar(toolbar)
+
+
+        val drawer = findViewById<View>(R.id.drawer_layout) as DrawerLayout
+        val toggle = ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+        drawer.addDrawerListener(toggle)
+        toggle.syncState()
+
+
+
+
+        callbackManager=CallbackManager.Factory.create()
+        login_button_facebook.setReadPermissions("public_profile");
+
+        present = AuthorizationPresent(this)
+        present!!.setCallManagerFacebok(callbackManager)
+
+        //GOOGLE
+        sign_in_button.setOnClickListener {
+            val signInIntent = Auth.GoogleSignInApi.getSignInIntent(present!!.getGoogleApi())//googleApiClient
+            startActivityForResult(signInIntent, RC_SIGN_IN_GOOGLE)
+        }
+        btn_sign_out.setOnClickListener{//Выйти из аккаунта
+            Auth.GoogleSignInApi.signOut(present!!.getGoogleApi()).setResultCallback { updateUIGoogle(false) }
+            updateUIGoogle(false)
+        }
+
+        //VK
+        vk_in_button.setOnClickListener{
+            VKSdk.login(this);
+        }
+        vk_on_button.setOnClickListener{
+            updateUIVK(false)
+            VKSdk.logout()
+        }
+    }
+
+    override fun showMenu(model: UserModel) {
+            var view :View? = null
+            when(model.service){
+                "Google" -> view = google_include
+                "Facebook" -> view = facebook_include
+                "VK" -> view = vk_include
+            }
+        if (model.first_name!=null) view!!.first_name_text.setText(model.first_name)else view!!.first_name_text.setText("")
+        if (model.last_name!=null) view!!.last_name_text.setText(model.last_name) else view!!.last_name_text.setText("")
+        if (model.urlImage!=null) view!!.circleView.load(model.urlImage)else view!!.circleView.load("")
+    }
+
+    override fun getActivity(): Activity =this
+
+    override fun onActivityResult(requestCode: Int, responseCode: Int,
+                                  data: Intent?) {
+        Log.i("requestCode", "${requestCode}")
+
+        if (!VKSdk.onActivityResult(requestCode, responseCode, data, present!!.getVKCallback()))
+
+        if (requestCode == RC_SIGN_IN_GOOGLE) present!!.handleSingInGoogle(Auth.GoogleSignInApi.getSignInResultFromIntent(data))//Google
+
+        callbackManager!!.onActivityResult(requestCode, responseCode, data)//FACEBOOK
+
+        super.onActivityResult(requestCode, responseCode, data)
+    }
+    /*fun handleSignInResult(result:GoogleSignInResult ){
+        Log.i("Google", "handleSignInResult:${result.status} " + result.isSuccess());
+        if (result.isSuccess) {
+            val acct:GoogleSignInAccount = result.signInAccount!!
+
+            Log.i("Google", "Name: " + acct.displayName + ", familyName: " + acct.familyName
+                    + ", Image: " + acct.photoUrl.toString());
+            updateUIGoogle(true)
+            complete()
+        } else {//Не вошел
+            updateUIGoogle(false)
+            Log.i("Google", "не зашел")
+            error("Google не зашел")
+        }
+    }*/
+
+    override fun updateUI(mode:String,isSignedIn: Boolean) {
+        when(mode){
+            "Google"->  updateUIGoogle(isSignedIn)
+            "VK"    ->  updateUIVK(isSignedIn)
+                    //"facebook"-не нуждается в этом у него самого получается следить за авторизацией
+        }
+    }
+
+    private fun updateUIGoogle(isSignedIn: Boolean) {
+        if (isSignedIn) {
+            sign_in_button.setVisibility(View.GONE)
+            btn_sign_out.setVisibility(View.VISIBLE)
+        } else {
+            showMenu(UserModel("Google", null,null,null))
+            sign_in_button.setVisibility(View.VISIBLE)
+            btn_sign_out.setVisibility(View.GONE)
+        }
+    }
+
+    private fun updateUIVK(isSignedIn: Boolean) {
+        if (isSignedIn) {
+            vk_in_button.setVisibility(View.GONE)
+            vk_on_button.setVisibility(View.VISIBLE)
+        } else {
+            showMenu(UserModel("VK", null,null,null))
+            vk_in_button.setVisibility(View.VISIBLE)
+            vk_on_button.setVisibility(View.GONE)
+        }
+    }
+
+    override fun onBackPressed() {
+        val drawer = findViewById<View>(R.id.drawer_layout) as DrawerLayout
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+
+    override fun onConnectionFailed(p0: ConnectionResult) {
+        Log.i("Google", "onConnectionFailed:" + p0);
+    }
+
+    override fun onDestroy() {
+        Log.i("menu","onDestroy")
+        present!!.close()
+        super.onDestroy()
+    }
+}
