@@ -1,5 +1,6 @@
 package point.artem.projecttest.authorization.utils.google
 
+import android.support.v4.app.ActivityCompat.startActivityForResult
 import android.support.v4.app.FragmentActivity
 import android.util.Log
 import com.google.android.gms.auth.api.Auth
@@ -8,6 +9,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.auth.api.signin.GoogleSignInResult
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
+import point.artem.projecttest.authorization.AuthorizationActivity
 import point.artem.projecttest.authorization.model.UserModel
 import point.artem.projecttest.authorization.present.IAuthorizationPresent
 import point.artem.projecttest.authorization.utils.IAuthorizationService
@@ -32,7 +34,13 @@ class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationServic
         present.addUser(userModel!!)
     }
 
-    fun handleSignInResult(result: GoogleSignInResult){
+    override fun login() {
+        val signInIntent = Auth.GoogleSignInApi.getSignInIntent(googleApiClient)//googleApiClient
+        present.getActivity().startActivityForResult(signInIntent, AuthorizationActivity.RC_SIGN_IN_GOOGLE)
+    }
+
+
+        fun handleSignInResult(result: GoogleSignInResult){
         Log.i("Google", "handleSignInResult:${result.status} " + result.isSuccess());
         if (result.isSuccess) {
             val acct: GoogleSignInAccount = result.signInAccount!!
@@ -55,5 +63,6 @@ class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationServic
     }
     override fun logout() {
         Auth.GoogleSignInApi.signOut(googleApiClient)
+        present.updateUI("Google", false)
     }
 }

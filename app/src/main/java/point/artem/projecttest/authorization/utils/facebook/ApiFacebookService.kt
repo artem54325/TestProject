@@ -35,6 +35,10 @@ class ApiFacebookService(val present:IAuthorizationPresent):IAuthorizationServic
         }
     }
 
+    override fun login() {
+
+    }
+
     override fun getUser(){
         if (userModel==null) userModel = UserModel("Facebook",Profile.getCurrentProfile().firstName,Profile.getCurrentProfile().lastName,Profile.getCurrentProfile().getProfilePictureUri(100,100).toString())
         present.addUser(userModel!!)

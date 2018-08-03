@@ -30,7 +30,9 @@ import point.artem.projecttest.authorization.utils.load
 class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiClient.OnConnectionFailedListener {
     var present: AuthorizationPresent? = null
     var callbackManager:CallbackManager? = null
-    private val RC_SIGN_IN_GOOGLE = 911
+    companion object {
+        val RC_SIGN_IN_GOOGLE = 911
+    }
 
     /*
     * Я очень надеюсь, что код оправдает ваши желаение.
@@ -56,7 +58,7 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
         setContentView(R.layout.activity_authorization)
         val toolbar = findViewById<View>(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
-
+        present = AuthorizationPresent(this)
 
         val drawer = findViewById<View>(R.id.drawer_layout) as DrawerLayout
         val toggle = ActionBarDrawerToggle(
@@ -70,26 +72,22 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
         callbackManager=CallbackManager.Factory.create()
         login_button_facebook.setReadPermissions("public_profile");
 
-        present = AuthorizationPresent(this)
         present!!.setCallManagerFacebok(callbackManager)
 
         //GOOGLE
         sign_in_button.setOnClickListener {
-            val signInIntent = Auth.GoogleSignInApi.getSignInIntent(present!!.getGoogleApi())//googleApiClient
-            startActivityForResult(signInIntent, RC_SIGN_IN_GOOGLE)
+            present!!.login("Google")
         }
         btn_sign_out.setOnClickListener{//Выйти из аккаунта
-            Auth.GoogleSignInApi.signOut(present!!.getGoogleApi()).setResultCallback { updateUIGoogle(false) }
-            updateUIGoogle(false)
+            present!!.logout("Google")
         }
 
         //VK
         vk_in_button.setOnClickListener{
-            VKSdk.login(this);
+            present!!.login("VK")
         }
         vk_on_button.setOnClickListener{
-            updateUIVK(false)
-            VKSdk.logout()
+            present!!.logout("VK")
         }
     }
 
@@ -102,7 +100,7 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
             }
         if (model.first_name!=null) view!!.first_name_text.setText(model.first_name)else view!!.first_name_text.setText("")
         if (model.last_name!=null) view!!.last_name_text.setText(model.last_name) else view!!.last_name_text.setText("")
-        if (model.urlImage!=null) view!!.circleView.load(model.urlImage)else view!!.circleView.load("")
+        if (model.urlImage!=null) view!!.circleView.load(model.urlImage) else view!!.circleView.load("")
     }
 
     override fun getActivity(): Activity =this
@@ -111,7 +109,7 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
                                   data: Intent?) {
         Log.i("requestCode", "${requestCode}")
 
-        if (!VKSdk.onActivityResult(requestCode, responseCode, data, present!!.getVKCallback()))
+        if (!VKSdk.onActivityResult(requestCode, responseCode, data, present!!.getVKCallback()))//VK
 
         if (requestCode == RC_SIGN_IN_GOOGLE) present!!.handleSingInGoogle(Auth.GoogleSignInApi.getSignInResultFromIntent(data))//Google
 

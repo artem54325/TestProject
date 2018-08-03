@@ -19,6 +19,10 @@ import com.vk.sdk.api.VKRequest
 
 class ApiVkService(val present: IAuthorizationPresent): IAuthorizationService {
     var userModelVk:UserModel?=null
+
+    override fun login() {
+        VKSdk.login(present.getActivity());
+    }
     override fun getUser(){
         if (userModelVk!=null){
             present.addUser(userModelVk!!)
@@ -37,6 +41,7 @@ class ApiVkService(val present: IAuthorizationPresent): IAuthorizationService {
 
     override fun logout() {
         VKSdk.logout()
+        present.updateUI("Google", false)
     }
 
     fun getCallback() :VKCallback<VKAccessToken>{
