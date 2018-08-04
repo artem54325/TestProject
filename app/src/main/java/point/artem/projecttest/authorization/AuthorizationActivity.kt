@@ -117,21 +117,6 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
 
         super.onActivityResult(requestCode, responseCode, data)
     }
-    /*fun handleSignInResult(result:GoogleSignInResult ){
-        Log.i("Google", "handleSignInResult:${result.status} " + result.isSuccess());
-        if (result.isSuccess) {
-            val acct:GoogleSignInAccount = result.signInAccount!!
-
-            Log.i("Google", "Name: " + acct.displayName + ", familyName: " + acct.familyName
-                    + ", Image: " + acct.photoUrl.toString());
-            updateUIGoogle(true)
-            complete()
-        } else {//Не вошел
-            updateUIGoogle(false)
-            Log.i("Google", "не зашел")
-            error("Google не зашел")
-        }
-    }*/
 
     override fun updateUI(mode:String,isSignedIn: Boolean) {
         when(mode){
