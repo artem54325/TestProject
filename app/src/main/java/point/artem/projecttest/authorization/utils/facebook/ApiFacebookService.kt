@@ -1,5 +1,6 @@
 package point.artem.projecttest.authorization.utils.facebook
 
+import android.content.Intent
 import android.util.Log
 import com.facebook.*
 import com.facebook.login.LoginResult
@@ -17,6 +18,7 @@ import com.facebook.ProfileTracker
 
 
 class ApiFacebookService(val present:IAuthorizationPresent):IAuthorizationService{
+    private var callbackManager: CallbackManager? = null
     private var userModel:UserModel? = null
     private var profileTracker:ProfileTracker?=null
 
@@ -36,7 +38,8 @@ class ApiFacebookService(val present:IAuthorizationPresent):IAuthorizationServic
     }
 
     override fun login() {
-
+        callbackManager=CallbackManager.Factory.create()
+        setCallback(callbackManager)
     }
 
     override fun getUser(){
@@ -45,24 +48,7 @@ class ApiFacebookService(val present:IAuthorizationPresent):IAuthorizationServic
     }
 
 
-    fun authorization() : FacebookCallback<LoginResult> {
-        return object : FacebookCallback<LoginResult> {
-            override fun onSuccess(loginResult: LoginResult) {
-                present.complete()
-            }
-
-            override fun onCancel() {
-                present.error("Не подключился к Facebook")
-                Log.i("facebook", "Не подключился к Facebook")
-            }
-
-            override fun onError(exception: FacebookException) {
-                exception.printStackTrace()
-            }
-        }
-    }
-
-    fun callback(callbackManager:CallbackManager?){
+    fun setCallback(callbackManager:CallbackManager?){
         LoginManager.getInstance().registerCallback(callbackManager,
                 object : FacebookCallback<LoginResult> {
                     override fun onSuccess(loginResult: LoginResult) {
@@ -84,5 +70,8 @@ class ApiFacebookService(val present:IAuthorizationPresent):IAuthorizationServic
     override fun logout(){
         if (profileTracker!=null) profileTracker!!.stopTracking();
         LoginManager.getInstance().logOut()
+    }
+    override fun result(requestCode: Int, responseCode: Int, data: Intent?) {
+        callbackManager!!.onActivityResult(requestCode, responseCode, data)//FACEBOOK
     }
 }

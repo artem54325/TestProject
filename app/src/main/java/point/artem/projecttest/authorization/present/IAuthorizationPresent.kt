@@ -1,6 +1,7 @@
 package point.artem.projecttest.authorization.present
 
 import android.app.Activity
+import android.content.Intent
 import point.artem.projecttest.authorization.model.UserModel
 
 
@@ -12,4 +13,6 @@ interface IAuthorizationPresent {
     fun error(error:String)//Оповестить об ошибке
     fun updateUI(mode:String, boolean: Boolean)//Изменение состояния кнопки
     fun addUser(model: UserModel)
+    fun activityResultPresent(requestCode: Int, responseCode: Int,
+                              data: Intent?)
 }

@@ -1,5 +1,6 @@
 package point.artem.projecttest.authorization.utils.google
 
+import android.content.Intent
 import android.support.v4.app.ActivityCompat.startActivityForResult
 import android.support.v4.app.FragmentActivity
 import android.util.Log
@@ -16,6 +17,8 @@ import point.artem.projecttest.authorization.utils.IAuthorizationService
 
 
 class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationService, GoogleApiClient.OnConnectionFailedListener{
+
+
     private var userModel:UserModel? = null
     var googleApiClient: GoogleApiClient
 
@@ -40,7 +43,7 @@ class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationServic
     }
 
 
-        fun handleSignInResult(result: GoogleSignInResult){
+    private fun handleSignInResult(result: GoogleSignInResult){
         Log.i("Google", "handleSignInResult:${result.status} " + result.isSuccess());
         if (result.isSuccess) {
             val acct: GoogleSignInAccount = result.signInAccount!!
@@ -55,7 +58,6 @@ class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationServic
             error("Google не зашел")
         }
     }
-    fun getGoogleApi():GoogleApiClient=googleApiClient
 
     override fun onConnectionFailed(p0: ConnectionResult) {
         Log.i("google", p0.errorMessage)
@@ -64,5 +66,8 @@ class ApiGoogleService(val present: IAuthorizationPresent) :IAuthorizationServic
     override fun logout() {
         Auth.GoogleSignInApi.signOut(googleApiClient)
         present.updateUI("Google", false)
+    }
+    override fun result(requestCode: Int, responseCode: Int, data: Intent?) {
+        if (requestCode == AuthorizationActivity.RC_SIGN_IN_GOOGLE) handleSignInResult(Auth.GoogleSignInApi.getSignInResultFromIntent(data))
     }
 }

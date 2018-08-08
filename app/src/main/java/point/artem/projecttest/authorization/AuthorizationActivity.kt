@@ -28,8 +28,7 @@ import point.artem.projecttest.authorization.utils.load
 
 
 class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiClient.OnConnectionFailedListener {
-    var present: AuthorizationPresent? = null
-    var callbackManager:CallbackManager? = null
+    lateinit var present: AuthorizationPresent
     companion object {
         val RC_SIGN_IN_GOOGLE = 911
     }
@@ -66,28 +65,25 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
         drawer.addDrawerListener(toggle)
         toggle.syncState()
 
-
-
-
-        callbackManager=CallbackManager.Factory.create()
-        login_button_facebook.setReadPermissions("public_profile");
-
-        present!!.setCallManagerFacebok(callbackManager)
+        login_button_facebook.setReadPermissions("public_profile");//facebook
+        login_button_facebook.setOnClickListener{
+            present.login("Facebook")
+        }
 
         //GOOGLE
         sign_in_button.setOnClickListener {
-            present!!.login("Google")
+            present.login("Google")
         }
         btn_sign_out.setOnClickListener{//Выйти из аккаунта
-            present!!.logout("Google")
+            present.logout("Google")
         }
 
         //VK
         vk_in_button.setOnClickListener{
-            present!!.login("VK")
+            present.login("VK")
         }
         vk_on_button.setOnClickListener{
-            present!!.logout("VK")
+            present.logout("VK")
         }
     }
 
@@ -109,11 +105,7 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
                                   data: Intent?) {
         Log.i("requestCode", "${requestCode}")
 
-        if (!VKSdk.onActivityResult(requestCode, responseCode, data, present!!.getVKCallback()))//VK
-
-        if (requestCode == RC_SIGN_IN_GOOGLE) present!!.handleSingInGoogle(Auth.GoogleSignInApi.getSignInResultFromIntent(data))//Google
-
-        callbackManager!!.onActivityResult(requestCode, responseCode, data)//FACEBOOK
+        present.activityResultPresent(requestCode, responseCode, data)
 
         super.onActivityResult(requestCode, responseCode, data)
     }
@@ -164,7 +156,7 @@ class AuthorizationActivity :AppCompatActivity(), IAuthorizationView, GoogleApiC
 
     override fun onDestroy() {
         Log.i("menu","onDestroy")
-        present!!.close()
+        present.close()
         super.onDestroy()
     }
 }
